@@ -104,7 +104,6 @@ def convertRow(row):
 rows = map(convertRow, rows)
 #print rows[0]
 createFeatureClass(featureName, rows, featureFieldList, featureInsertCursorFields)
-print "Load data to Wells feature class"
 
 elapsed_time = time.time() - start_time
 print elapsed_time
