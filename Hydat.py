@@ -2,6 +2,7 @@
 # visit https://code.google.com/p/pyodbc/downloads/list and download pyodbc-3.0.7.win32-py2.7.exe
 # Input data: 
 #        1) An Access database named Hydat.mdb, which is unziped from ftp://arccf10.tor.ec.gc.ca/wsc/software/HYDAT/Hydat_20150717.zip. 
+#        1) An Access database named Hydat.mdb, which is unziped from ftp://arccf10.tor.ec.gc.ca/wsc/software/HYDAT/Hydat_20170118.zip. 
 # Steps: 1) Use C:\Windows\SysWOW64\odbcad32.exe (The default one in control panel might not work since it is 64 bit) to create a ODBC User DSN using Hydat as the name for Hydat.mdb since the office is 32 bit.
 
 # Output data: 
@@ -43,13 +44,14 @@ def createFeatureClass(featureName, featureData, featureFieldList, featureInsert
 				cntr = cntr + 1
 	except Exception as e:
 		print "\tError: " + featureName + ": " + e.message
+		print e
 	# Change the projection to web mercator
 	#arcpy.Project_management(featureNameNAD83Path, arcpy.env.workspace + "\\" + featureName, "PROJCS['WGS_1984_Web_Mercator_Auxiliary_Sphere',GEOGCS['GCS_WGS_1984',DATUM['D_WGS_1984',SPHEROID['WGS_1984',6378137.0,298.257223563]],PRIMEM['Greenwich',0.0],UNIT['Degree',0.0174532925199433]],PROJECTION['Mercator_Auxiliary_Sphere'],PARAMETER['False_Easting',0.0],PARAMETER['False_Northing',0.0],PARAMETER['Central_Meridian',0.0],PARAMETER['Standard_Parallel_1',0.0],PARAMETER['Auxiliary_Sphere_Type',0.0],UNIT['Meter',1.0]]", "NAD_1983_To_WGS_1984_5", "GEOGCS['GCS_North_American_1983',DATUM['D_North_American_1983',SPHEROID['GRS_1980',6378137.0,298.257222101]],PRIMEM['Greenwich',0.0],UNIT['Degree',0.0174532925199433]]")
 	#arcpy.FeatureClassToShapefile_conversion([featureNameNAD83Path], OUTPUT_PATH + "\\Shapefile")
 	#arcpy.Delete_management(featureNameNAD83Path, "FeatureClass")
 	print "Finish " + featureName + " feature class."
 
-	
+
 cnxn = pyodbc.connect('DSN=Hydat')
 availableDict = {}
 dataTypes = ["DLY_FLOWS", "DLY_LEVELS", "SED_DLY_LOADS", "SED_DLY_SUSCON"]
@@ -60,14 +62,20 @@ for dataType in dataTypes:
 	availableDict[dataType] = set(map(lambda row: row[0], rows))
 
 featureName = "EC_Hydrometric_Stations"
-featureFieldList = [["STATION_NUMBER", "TEXT", "", "", "", "", "NON_NULLABLE", "REQUIRED", ""], ["STATION_NAME", "TEXT", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""], ["PROV_TERR_STATE_LOC", "TEXT", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""], ["REGIONAL_OFFICE_ID", "TEXT", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""], ["HYD_STATUS", "TEXT", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""], ["SED_STATUS", "TEXT", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""], ["LATITUDE", "DOUBLE", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""], ["LONGITUDE", "DOUBLE", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""], ["DRAINAGE_AREA_GROSS", "DOUBLE", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""], ["DRAINAGE_AREA_EFFECT", "TEXT", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""],  ["RHBN", "LONG", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""],  ["REAL_TIME", "LONG", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""],  ["CONTRIBUTOR_ID", "LONG", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""],  ["OPERATOR_ID", "LONG", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""],  ["DATUM_ID", "LONG", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""], ["HYD_STATUS_EN", "TEXT", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""],  ["HYD_STATUS_FR", "TEXT", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""], ["SED_STATUS_EN", "TEXT", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""],  ["SED_STATUS_FR", "TEXT", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""],  ["DLY_FLOWS_URL", "TEXT", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""],  ["DLY_LEVELS_URL", "TEXT", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""],  ["SED_DLY_LOADS_URL", "TEXT", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""],  ["SED_DLY_SUSCON_URL", "TEXT", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""]]
+featureFieldList = map(lambda fieldname: [fieldname, "TEXT", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""], ["STATION_NUMBER", "STATION_NAME", "PROV_TERR_STATE_LOC", "REGIONAL_OFFICE_ID", "HYD_STATUS", "SED_STATUS"])
+featureFieldList = featureFieldList + map(lambda fieldname: [fieldname, "DOUBLE", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""], ["LATITUDE", "LONGITUDE", "DRAINAGE_AREA_GROSS", "DRAINAGE_AREA_EFFECT"])
+featureFieldList = featureFieldList + map(lambda fieldname: [fieldname, "LONG", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""], ["RHBN", "REAL_TIME", "CONTRIBUTOR_ID", "OPERATOR_ID", "DATUM_ID"])
+featureFieldList = featureFieldList + map(lambda fieldname: [fieldname, "TEXT", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""], ["HYD_STATUS_EN", "HYD_STATUS_FR", "SED_STATUS_EN", "SED_STATUS_FR", "DLY_FLOWS_URL", "DLY_LEVELS_URL", "SED_DLY_LOADS_URL", "SED_DLY_SUSCON_URL"])
+# featureFieldList = [["STATION_NUMBER", "TEXT", "", "", "", "", "NON_NULLABLE", "REQUIRED", ""], ["STATION_NAME", "TEXT", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""], ["PROV_TERR_STATE_LOC", "TEXT", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""], ["REGIONAL_OFFICE_ID", "TEXT", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""], ["HYD_STATUS", "TEXT", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""], ["SED_STATUS", "TEXT", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""], ["LATITUDE", "DOUBLE", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""], ["LONGITUDE", "DOUBLE", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""], ["DRAINAGE_AREA_GROSS", "DOUBLE", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""], ["DRAINAGE_AREA_EFFECT", "TEXT", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""],  ["RHBN", "LONG", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""],  ["REAL_TIME", "LONG", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""],  ["CONTRIBUTOR_ID", "LONG", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""],  ["OPERATOR_ID", "LONG", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""],  ["DATUM_ID", "LONG", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""], ["HYD_STATUS_EN", "TEXT", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""],  ["HYD_STATUS_FR", "TEXT", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""], ["SED_STATUS_EN", "TEXT", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""],  ["SED_STATUS_FR", "TEXT", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""],  ["DLY_FLOWS_URL", "TEXT", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""],  ["DLY_LEVELS_URL", "TEXT", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""],  ["SED_DLY_LOADS_URL", "TEXT", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""],  ["SED_DLY_SUSCON_URL", "TEXT", "", "", "", "", "NULLABLE", "NON_REQUIRED", ""]]
 featureInsertCursorFields = tuple(["SHAPE@XY"] + map(lambda list: list[0],featureFieldList))
 
 cnxn = pyodbc.connect('DSN=Hydat')
 cursor = cnxn.cursor()
 cursor.execute("select * from STATIONS WHERE PROV_TERR_STATE_LOC = 'ON'")
+#cursor.execute("select * from STATIONS")
 rows = cursor.fetchall()
 #print len(rows)
+
 def queryData(dataType, StationNumber):
 	cursor = cnxn.cursor()
 	#print "select * from " + dataType +  " WHERE STATION_NUMBER='" + StationNumber + "'"
@@ -85,7 +93,7 @@ def queryData(dataType, StationNumber):
 	f.write(head + "\n".join(map(lambda item: ",".join(map(lambda x: " " if (x is None) else str(x), list(item))), cursor.fetchall())))
 	f.close()
 	return 1
-	
+
 def convertRow(row):
 	hyd_status = [None, None]
 	if (row[4] == 'A'):
@@ -99,8 +107,8 @@ def convertRow(row):
 		sed_status = ['Discontinued', 'Ferm\xe9e']
 	
 	temp = map(lambda dataType: queryData(dataType, row[0]) if row[0] in availableDict[dataType] else None, dataTypes)
-	
-	return [(row[7], row[6])] + list(row) + hyd_status + sed_status + map(lambda dataType: 'http://lrcprrvspaap004/media/hydat_data/' + dataType + '_ON_' + row[0] + '.csv' if row[0] in availableDict[dataType] else None, dataTypes)
+	return [(row[7], row[6])] + list(row) + hyd_status + sed_status + map(lambda dataType: 'http://lrcbikdcapmdw07/media/HYDAT_DATA/' + dataType + '_ON_' + row[0] + '.csv' if row[0] in availableDict[dataType] else None, dataTypes)
+	#return [(row[7], row[6])] + list(row)
 rows = map(convertRow, rows)
 #print rows[0]
 createFeatureClass(featureName, rows, featureFieldList, featureInsertCursorFields)
